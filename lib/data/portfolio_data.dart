@@ -76,6 +76,8 @@ class PortfolioData {
         'BBPS modules with multi-biller support',
       ],
       accentColor: Color(0xFF02569B),
+      teamSize: 5,
+      url: 'https://play.google.com/store/apps/details?id=com.adityabirlacapitaldigital.OneApp&hl=en_IN',
     ),
     ProjectModel(
       title: 'ABCD Super App',
@@ -90,6 +92,8 @@ class PortfolioData {
         'Modular package architecture',
       ],
       accentColor: Color(0xFF0175C2),
+      teamSize: 7,
+      url: 'https://play.google.com/store/apps/details?id=com.adityabirlacapitaldigital.OneApp&hl=en_IN',
     ),
     ProjectModel(
       title: 'Weld Configurator',
@@ -104,6 +108,7 @@ class PortfolioData {
         'Comprehensive Unit, Widget & Integration tests',
       ],
       accentColor: Color(0xFFFFB400),
+      teamSize: 3,
     ),
     ProjectModel(
       title: 'Native Mobile Apps',
@@ -118,6 +123,8 @@ class PortfolioData {
         'Platform-specific integrations',
       ],
       accentColor: Color(0xFF3DDC84),
+      teamSize: 3,
+      url: 'https://play.google.com/store/search?q=delytix&c=apps&hl=en_IN',
     ),
     ProjectModel(
       title: 'Flutter Plugins',
@@ -132,6 +139,8 @@ class PortfolioData {
         'Full documentation and examples',
       ],
       accentColor: Color(0xFF54C5F8),
+      teamSize: 1,
+      url: 'https://pub.dev/packages/country_picker_bkb',
     ),
   ];
 

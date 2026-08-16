@@ -7,6 +7,7 @@ import '../theme/app_text_styles.dart';
 import '../utils/constants.dart';
 import '../utils/scroll_controller_provider.dart';
 import '../widgets/section_header.dart';
+import '../widgets/section_backgrounds.dart';
 
 class AboutSection extends StatefulWidget {
   const AboutSection({super.key});
@@ -57,24 +58,30 @@ class _AboutSectionState extends State<AboutSection>
           provider.setActiveSection('about');
         }
       },
-      child: Container(
-        width: double.infinity,
-        padding: EdgeInsets.symmetric(
-          horizontal: isMobile ? 24 : (isTablet ? 48 : 80),
-          vertical: AppConstants.sectionPaddingV,
-        ),
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 1200),
-          child: Column(
-            children: [
-              const SectionHeader(title: 'About Me'),
-              const SizedBox(height: 60),
-              isMobile
-                  ? _buildMobileLayout()
-                  : _buildDesktopLayout(),
-            ],
+      child: Stack(
+        children: [
+          const Positioned.fill(child: WebThreadBackground()),
+          Container(
+            width: double.infinity,
+            padding: EdgeInsets.symmetric(
+              horizontal: isMobile ? 24 : (isTablet ? 48 : 80),
+              vertical: AppConstants.sectionPaddingV,
+            ),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 1200),
+              child: Column(
+                children: [
+                  const SectionHeader(title: 'About Me'),
+                  const SizedBox(height: 60),
+                  // Mobile and tablet both use the single-column layout
+                  (isMobile || isTablet)
+                      ? _buildMobileLayout()
+                      : _buildDesktopLayout(),
+                ],
+              ),
+            ),
           ),
-        ),
+        ],
       ),
     );
   }
@@ -83,7 +90,7 @@ class _AboutSectionState extends State<AboutSection>
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Expanded(flex: 5, child: _buildTextContent()),
+        Expanded(flex: 5, child: _buildTextContent(mobile: false)),
         const SizedBox(width: 60),
         Expanded(flex: 4, child: _buildStats()),
       ],
@@ -93,14 +100,14 @@ class _AboutSectionState extends State<AboutSection>
   Widget _buildMobileLayout() {
     return Column(
       children: [
-        _buildTextContent(),
+        _buildTextContent(mobile: true),
         const SizedBox(height: 40),
         _buildStats(),
       ],
     );
   }
 
-  Widget _buildTextContent() {
+  Widget _buildTextContent({required bool mobile}) {
     return AnimatedSlide(
       offset: _visible ? Offset.zero : const Offset(-0.08, 0),
       duration: const Duration(milliseconds: 800),
@@ -114,35 +121,68 @@ class _AboutSectionState extends State<AboutSection>
             Text(AppConstants.summary, style: AppTextStyles.bodyMd),
             const SizedBox(height: 24),
             _highlight(Icons.code_rounded, 'Flutter & Dart Expert',
-                'Building production FinTech apps with complex architecture and state management.'),
-            const SizedBox(height: 16),
+                'Building production FinTech apps with complex architecture and state management.',
+                mobile: mobile),
+            SizedBox(height: mobile ? 12 : 16),
             _highlight(Icons.payment_rounded, 'Payment Systems',
-                'Deep expertise in UPI, BBPS, NPCI compliance, Stripe, and Razorpay.'),
-            const SizedBox(height: 16),
+                'Deep expertise in UPI, BBPS, NPCI compliance, Stripe, and Razorpay.',
+                mobile: mobile),
+            SizedBox(height: mobile ? 12 : 16),
             _highlight(Icons.groups_rounded, 'Tech Leadership',
-                'Led a 7-member Flutter team delivering code quality, reviews, and best practices.'),
-            const SizedBox(height: 16),
+                'Led a 7-member Flutter team delivering code quality, reviews, and best practices.',
+                mobile: mobile),
+            SizedBox(height: mobile ? 12 : 16),
             _highlight(Icons.devices_rounded, 'Cross-Platform',
-                'Shipped apps on Android, iOS, Web, and Windows Desktop using a single Flutter codebase.'),
+                'Shipped apps on Android, iOS, Web, and Windows Desktop using a single Flutter codebase.',
+                mobile: mobile),
           ],
         ),
       ),
     );
   }
 
-  Widget _highlight(IconData icon, String title, String description) {
+  Widget _highlight(IconData icon, String title, String description,
+      {bool mobile = false}) {
+    final iconBox = Container(
+      width: 40,
+      height: 40,
+      decoration: BoxDecoration(
+        gradient: AppColors.primaryGradient,
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Icon(icon, size: 18, color: Colors.white),
+    );
+
+    if (mobile) {
+      // On mobile/tablet: icon at top-left, title + description below — full width card
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: AppColors.surface.withOpacity(0.35),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: AppColors.border),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            iconBox,
+            const SizedBox(height: 12),
+            Text(title,
+                style: AppTextStyles.bodyMdPrimary
+                    .copyWith(fontWeight: FontWeight.w600)),
+            const SizedBox(height: 4),
+            Text(description, style: AppTextStyles.bodySm),
+          ],
+        ),
+      );
+    }
+
+    // Desktop: icon left, text right
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Container(
-          width: 40,
-          height: 40,
-          decoration: BoxDecoration(
-            gradient: AppColors.primaryGradient,
-            borderRadius: BorderRadius.circular(10),
-          ),
-          child: Icon(icon, size: 18, color: Colors.white),
-        ),
+        iconBox,
         const SizedBox(width: 14),
         Expanded(
           child: Column(
@@ -175,10 +215,12 @@ class _AboutSectionState extends State<AboutSection>
           crossAxisSpacing: 16,
           mainAxisSpacing: 16,
           childAspectRatio: 1.2,
-          children: _stats.map((s) => _StatCard(
-                data: s,
-                controller: _counterController,
-              )).toList(),
+          children: _stats
+              .map((s) => _StatCard(
+                    data: s,
+                    controller: _counterController,
+                  ))
+              .toList(),
         ),
       ),
     );
@@ -216,7 +258,9 @@ class _StatCardState extends State<_StatCard> {
           gradient: AppColors.cardGradient,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: _hovered ? AppColors.accent.withOpacity(0.5) : AppColors.border,
+            color: _hovered
+                ? AppColors.accent.withOpacity(0.5)
+                : AppColors.border,
           ),
           boxShadow: _hovered
               ? [

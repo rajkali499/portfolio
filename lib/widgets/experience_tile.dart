@@ -122,17 +122,30 @@ class _ExperienceTileState extends State<ExperienceTile>
           const SizedBox(height: 8),
           Text(widget.experience.role, style: AppTextStyles.roleTitle),
           const SizedBox(height: 4),
-          Row(
+          Wrap(
+            spacing: 12,
+            runSpacing: 4,
             children: [
-              Icon(Icons.access_time_rounded,
-                  size: 13, color: AppColors.textSecondary),
-              const SizedBox(width: 5),
-              Text(widget.experience.duration, style: AppTextStyles.duration),
-              const SizedBox(width: 12),
-              Icon(Icons.location_on_rounded,
-                  size: 13, color: AppColors.textSecondary),
-              const SizedBox(width: 5),
-              Text(widget.experience.location, style: AppTextStyles.duration),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.access_time_rounded,
+                      size: 13, color: AppColors.textSecondary),
+                  const SizedBox(width: 5),
+                  Text(widget.experience.duration,
+                      style: AppTextStyles.duration),
+                ],
+              ),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.location_on_rounded,
+                      size: 13, color: AppColors.textSecondary),
+                  const SizedBox(width: 5),
+                  Text(widget.experience.location,
+                      style: AppTextStyles.duration),
+                ],
+              ),
             ],
           ),
           const SizedBox(height: 16),
@@ -180,7 +193,7 @@ class _ExperienceTileState extends State<ExperienceTile>
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Row(
+                        Wrap(
                           children: [
                             Text(proj.name,
                                 style: AppTextStyles.bodyMdPrimary.copyWith(

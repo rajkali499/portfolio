@@ -46,7 +46,11 @@ class _ParticlesBackgroundState extends State<ParticlesBackground>
     _controller = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 1),
-    )..repeat();
+    )..repeat()..addListener(() {
+      if (_lastSize != Size.zero) {
+        _updateParticles(_lastSize);
+      }
+    });
   }
 
   @override
@@ -63,19 +67,18 @@ class _ParticlesBackgroundState extends State<ParticlesBackground>
         _lastSize = size;
         _initParticles(size);
       }
-      return AnimatedBuilder(
-        animation: _controller,
-        builder: (context, _) {
-          _updateParticles(_lastSize);
-          return RepaintBoundary(
-            child: CustomPaint(
+      return RepaintBoundary(
+        child: AnimatedBuilder(
+          animation: _controller,
+          builder: (context, _) {
+            return CustomPaint(
               size: size,
               painter: _ParticlesPainter(
                 particles: List.from(_particles),
               ),
-            ),
-          );
-        },
+            );
+          },
+        ),
       );
     });
   }

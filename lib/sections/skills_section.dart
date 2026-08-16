@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:provider/provider.dart';
@@ -10,6 +11,7 @@ import '../utils/constants.dart';
 import '../utils/scroll_controller_provider.dart';
 import '../widgets/section_header.dart';
 import '../widgets/skill_bar.dart';
+import '../widgets/section_backgrounds.dart';
 
 class SkillsSection extends StatefulWidget {
   const SkillsSection({super.key});
@@ -35,28 +37,32 @@ class _SkillsSectionState extends State<SkillsSection> {
           provider.setActiveSection('skills');
         }
       },
-      child: Container(
-        width: double.infinity,
-        color: const Color(0xFF080D18),
-        padding: EdgeInsets.symmetric(
-          horizontal: isMobile ? 24 : (isTablet ? 48 : 80),
-          vertical: AppConstants.sectionPaddingV,
-        ),
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 1200),
-          child: Column(
-            children: [
-              const SectionHeader(
-                title: 'Technical Skills',
-                subtitle: 'Technologies and tools I work with every day.',
+      child: Stack(
+        children: [
+          const Positioned.fill(child: HexWebBackground()),
+          Container(
+            width: double.infinity,
+            padding: EdgeInsets.symmetric(
+              horizontal: isMobile ? 24 : (isTablet ? 48 : 80),
+              vertical: AppConstants.sectionPaddingV,
+            ),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 1200),
+              child: Column(
+                children: [
+                  const SectionHeader(
+                    title: 'Technical Skills',
+                    subtitle: 'Technologies and tools I work with every day.',
+                  ),
+                  isMobile
+                      ? _buildMobileLayout(1)
+                      : isTablet ? _buildMobileLayout(2)
+                                 : _buildDesktopLayout(isTablet),
+                ],
               ),
-              const SizedBox(height: 60),
-              isMobile
-                  ? _buildMobileLayout(isMobile)
-                  : _buildDesktopLayout(isTablet),
-            ],
+            ),
           ),
-        ),
+        ],
       ),
     );
   }
@@ -91,7 +97,7 @@ class _SkillsSectionState extends State<SkillsSection> {
     );
   }
 
-  Widget _buildMobileLayout(bool isMobile) {
+  Widget _buildMobileLayout(int crossAxisCount) {
     return Column(
       children: [
         Column(
@@ -109,7 +115,7 @@ class _SkillsSectionState extends State<SkillsSection> {
           ],
         ),
         const SizedBox(height: 40),
-        _buildCategoryGrid(1),
+        _buildCategoryGrid(crossAxisCount),
       ],
     );
   }
@@ -122,7 +128,7 @@ class _SkillsSectionState extends State<SkillsSection> {
         crossAxisCount: crossAxisCount,
         crossAxisSpacing: 16,
         mainAxisSpacing: 16,
-        childAspectRatio: crossAxisCount == 2 ? 1.1 : 2.0,
+        childAspectRatio: crossAxisCount == 2 ? 0.8 : 2.0,
       ),
       itemCount: PortfolioData.skillCategories.length,
       itemBuilder: (context, index) {
@@ -151,109 +157,173 @@ class _SkillCategoryCard extends StatefulWidget {
   State<_SkillCategoryCard> createState() => _SkillCategoryCardState();
 }
 
-class _SkillCategoryCardState extends State<_SkillCategoryCard> {
-  bool _hovered = false;
+class _SkillCategoryCardState extends State<_SkillCategoryCard>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _flipController;
+  late Animation<double> _flipAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _flipController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 550),
+    );
+    _flipAnimation = CurvedAnimation(
+      parent: _flipController,
+      curve: Curves.easeInOut,
+    );
+  }
+
+  @override
+  void dispose() {
+    _flipController.dispose();
+    super.dispose();
+  }
+
+  void _onHover(bool hovered) {
+    if (hovered) {
+      _flipController.forward();
+    } else {
+      _flipController.reverse();
+    }
+  }
+
+  Widget _buildBackFace() {
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        gradient: AppColors.cardGradient,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Text(
+            widget.category.icon,
+            style: const TextStyle(fontSize: 52),
+          ),
+          const SizedBox(height: 18),
+          Text(
+            widget.category.title,
+            style: AppTextStyles.bodyMdPrimary.copyWith(
+              fontWeight: FontWeight.w700,
+              fontSize: 15,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFrontFace() {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: AppColors.cardGradient,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.accent.withOpacity(0.45)),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.accent.withOpacity(0.15),
+            blurRadius: 22,
+            spreadRadius: 2,
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Text(widget.category.icon, style: const TextStyle(fontSize: 20)),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  widget.category.title,
+                  style: AppTextStyles.bodyMdPrimary
+                      .copyWith(fontWeight: FontWeight.w600, fontSize: 14),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          Wrap(
+            spacing: 6,
+            runSpacing: 6,
+            children: widget.category.skills
+                .asMap()
+                .entries
+                .map<Widget>((e) {
+              final isHighlighted = e.key < 2;
+              return Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                decoration: BoxDecoration(
+                  color: isHighlighted
+                      ? AppColors.accent.withOpacity(0.12)
+                      : AppColors.primary.withOpacity(0.12),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: isHighlighted
+                        ? AppColors.accent.withOpacity(0.5)
+                        : AppColors.primary.withOpacity(0.35),
+                  ),
+                ),
+                child: Text(
+                  e.value as String,
+                  style: AppTextStyles.chipLabel.copyWith(
+                    color: isHighlighted
+                        ? AppColors.accent
+                        : AppColors.textPrimary,
+                    fontSize: 11,
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+        ],
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     Widget card = MouseRegion(
-      onEnter: (_) => setState(() => _hovered = true),
-      onExit: (_) => setState(() => _hovered = false),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 250),
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          gradient: AppColors.cardGradient,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: _hovered
-                ? AppColors.accent.withOpacity(0.4)
-                : AppColors.border,
-          ),
-          boxShadow: _hovered
-              ? [
-                  BoxShadow(
-                    color: AppColors.accent.withOpacity(0.15),
-                    blurRadius: 20,
-                    spreadRadius: 2,
-                  )
-                ]
-              : [],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Text(widget.category.icon, style: const TextStyle(fontSize: 20)),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Text(
-                    widget.category.title,
-                    style: AppTextStyles.bodyMdPrimary
-                        .copyWith(fontWeight: FontWeight.w600, fontSize: 14),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 14),
-            Expanded(
-              child: SingleChildScrollView(
-                physics: const NeverScrollableScrollPhysics(),
-                child: Wrap(
-                  spacing: 6,
-                  runSpacing: 6,
-                  children: widget.category.skills
-                      .asMap()
-                      .entries
-                      .map<Widget>((e) {
-                    final isHighlighted = e.key < 2;
-                    return AnimatedContainer(
-                      duration: const Duration(milliseconds: 200),
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 10, vertical: 5),
-                      decoration: BoxDecoration(
-                        color: isHighlighted || _hovered
-                            ? AppColors.accent.withOpacity(0.12)
-                            : AppColors.primary.withOpacity(0.12),
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(
-                          color: isHighlighted || _hovered
-                              ? AppColors.accent.withOpacity(0.5)
-                              : AppColors.primary.withOpacity(0.35),
-                        ),
-                      ),
-                      child: Text(
-                        e.value as String,
-                        style: AppTextStyles.chipLabel.copyWith(
-                          color: isHighlighted || _hovered
-                              ? AppColors.accent
-                              : AppColors.textPrimary,
-                          fontSize: 11,
-                        ),
-                      ),
-                    );
-                  }).toList(),
-                ),
-              ),
-            ),
-          ],
-        ),
+      onEnter: (_) => _onHover(true),
+      onExit: (_) => _onHover(false),
+      child: AnimatedBuilder(
+        animation: _flipAnimation,
+        builder: (context, _) {
+          final angle = _flipAnimation.value * math.pi;
+          final showFront = angle > math.pi / 2;
+
+          Widget face = showFront
+              ? Transform(
+                  alignment: Alignment.center,
+                  transform: Matrix4.rotationY(math.pi),
+                  child: _buildFrontFace(),
+                )
+              : _buildBackFace();
+
+          return Transform(
+            alignment: Alignment.center,
+            transform: Matrix4.identity()
+              ..setEntry(3, 2, 0.001)
+              ..rotateY(angle),
+            child: face,
+          );
+        },
       ),
     );
 
     if (widget.triggered) {
       return card
-          .animate(
-            delay: Duration(milliseconds: widget.index * 120),
-          )
+          .animate(delay: Duration(milliseconds: widget.index * 120))
           .fadeIn(duration: 600.ms)
-          .slideY(
-            begin: 0.2,
-            end: 0,
-            duration: 600.ms,
-            curve: Curves.easeOut,
-          );
+          .slideY(begin: 0.2, end: 0, duration: 600.ms, curve: Curves.easeOut);
     }
 
     return Opacity(opacity: 0, child: card);

@@ -6,8 +6,11 @@ class AppConstants {
   static const String email = 'rajkali499@gmail.com';
   static const String phone = '+91 9788022074';
   static const String location = 'Chennai, Tamil Nadu';
-  static const String github = 'https://github.com/kalirajan-k';
+  static const String github = 'https://github.com/rajkali499';
   static const String linkedIn = 'https://linkedin.com/in/kalirajan-k';
+  static const String gmailCompose =
+      'https://mail.google.com/mail/?view=cm&fs=1&to=rajkali499@gmail.com&su=Opportunity%20from%20Portfolio';
+  static const String resumeAsset = 'assets/KALIRAJAN_K_Fintech.pdf';
 
   static const String summary =
       'Flutter engineer with 4 years of experience building production-scale FinTech applications. '

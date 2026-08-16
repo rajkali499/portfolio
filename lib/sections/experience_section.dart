@@ -8,6 +8,7 @@ import '../utils/constants.dart';
 import '../utils/scroll_controller_provider.dart';
 import '../widgets/experience_tile.dart';
 import '../widgets/section_header.dart';
+import '../widgets/section_backgrounds.dart';
 
 class ExperienceSection extends StatefulWidget {
   const ExperienceSection({super.key});
@@ -56,134 +57,205 @@ class _ExperienceSectionState extends State<ExperienceSection>
           provider.setActiveSection('experience');
         }
       },
-      child: Container(
-        width: double.infinity,
-        color: const Color(0xFF080D18),
-        padding: EdgeInsets.symmetric(
-          horizontal: isMobile ? 24 : (isTablet ? 48 : 80),
-          vertical: AppConstants.sectionPaddingV,
-        ),
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 900),
-          child: Column(
-            children: [
-              const SectionHeader(title: 'Work Experience'),
-              const SizedBox(height: 60),
-              _buildTimeline(isMobile),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildTimeline(bool isMobile) {
-    if (isMobile) {
-      return Column(
-        children: PortfolioData.experience.asMap().entries.map((e) {
-          return Column(
-            children: [
-              AnimatedSlide(
-                offset: _visible ? Offset.zero : const Offset(0, 0.1),
-                duration: Duration(milliseconds: 600 + e.key * 200),
-                curve: Curves.easeOut,
-                child: AnimatedOpacity(
-                  opacity: _visible ? 1.0 : 0.0,
-                  duration: Duration(milliseconds: 600 + e.key * 200),
-                  child: ExperienceTile(experience: e.value),
-                ),
-              ),
-              if (e.key < PortfolioData.experience.length - 1)
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  child: AnimatedBuilder(
-                    animation: _lineAnimation,
-                    builder: (context, _) => Container(
-                      width: 2,
-                      height: 40 * _lineAnimation.value,
-                      decoration: BoxDecoration(
-                        gradient: AppColors.primaryGradientVertical,
-                        borderRadius: BorderRadius.circular(1),
-                      ),
-                    ),
-                  ),
-                ),
-            ],
-          );
-        }).toList(),
-      );
-    }
-
-    return IntrinsicHeight(
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
+      child: Stack(
         children: [
-          Expanded(
-            child: Column(
-              children: [
-                AnimatedSlide(
-                  offset: _visible ? Offset.zero : const Offset(-0.1, 0),
-                  duration: const Duration(milliseconds: 700),
-                  curve: Curves.easeOut,
-                  child: AnimatedOpacity(
-                    opacity: _visible ? 1.0 : 0.0,
-                    duration: const Duration(milliseconds: 700),
-                    child: ExperienceTile(
-                      experience: PortfolioData.experience[0],
-                      alignRight: true,
-                    ),
-                  ),
-                ),
-                const Spacer(),
-              ],
+          const Positioned.fill(child: BlueprintWebBackground()),
+          Container(
+            width: double.infinity,
+            padding: EdgeInsets.symmetric(
+              horizontal: isMobile ? 24 : (isTablet ? 48 : 80),
+              vertical: AppConstants.sectionPaddingV,
             ),
-          ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
-            child: Column(
-              children: [
-                _buildTimelineDot(active: true),
-                Expanded(
-                  child: AnimatedBuilder(
-                    animation: _lineAnimation,
-                    builder: (context, _) => FractionallySizedBox(
-                      heightFactor: _lineAnimation.value,
-                      alignment: Alignment.topCenter,
-                      child: Container(
-                        width: 2,
-                        decoration: BoxDecoration(
-                          gradient: AppColors.primaryGradientVertical,
-                          borderRadius: BorderRadius.circular(1),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-                _buildTimelineDot(active: false),
-              ],
-            ),
-          ),
-          Expanded(
-            child: Column(
-              children: [
-                const Spacer(),
-                AnimatedSlide(
-                  offset: _visible ? Offset.zero : const Offset(0.1, 0),
-                  duration: const Duration(milliseconds: 700),
-                  curve: Curves.easeOut,
-                  child: AnimatedOpacity(
-                    opacity: _visible ? 1.0 : 0.0,
-                    duration: const Duration(milliseconds: 700),
-                    child: ExperienceTile(
-                      experience: PortfolioData.experience[1],
-                    ),
-                  ),
-                ),
-              ],
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 900),
+              child: Column(
+                children: [
+                  const SectionHeader(title: 'Work Experience'),
+                  const SizedBox(height: 60),
+                  _buildTimeline(isMobile, isTablet),
+                ],
+              ),
             ),
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildTimeline(bool isMobile, bool isTablet) {
+    if (isMobile) return _buildMobileTimeline();
+    if (isTablet) return _buildTabletTimeline();
+    return _buildDesktopTimeline();
+  }
+
+  // Mobile: stacked cards with short connector between them
+  Widget _buildMobileTimeline() {
+    return Column(
+      children: PortfolioData.experience.asMap().entries.map((e) {
+        return Column(
+          children: [
+            AnimatedSlide(
+              offset: _visible ? Offset.zero : const Offset(0, 0.1),
+              duration: Duration(milliseconds: 600 + e.key * 200),
+              curve: Curves.easeOut,
+              child: AnimatedOpacity(
+                opacity: _visible ? 1.0 : 0.0,
+                duration: Duration(milliseconds: 600 + e.key * 200),
+                child: ExperienceTile(experience: e.value),
+              ),
+            ),
+            if (e.key < PortfolioData.experience.length - 1)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                child: AnimatedBuilder(
+                  animation: _lineAnimation,
+                  builder: (context, _) => Container(
+                    width: 2,
+                    height: 40 * _lineAnimation.value,
+                    decoration: BoxDecoration(
+                      gradient: AppColors.primaryGradientVertical,
+                      borderRadius: BorderRadius.circular(1),
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        );
+      }).toList(),
+    );
+  }
+
+  // Tablet: timeline dots on the left, cards in a column on the right
+  Widget _buildTabletTimeline() {
+    final experiences = PortfolioData.experience;
+    return Column(
+      children: experiences.asMap().entries.map((entry) {
+        final i = entry.key;
+        final exp = entry.value;
+        final isLast = i == experiences.length - 1;
+        return IntrinsicHeight(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // Left: dot + vertical connector filling card height
+              SizedBox(
+                width: 32,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    const SizedBox(height: 20),
+                    _buildTimelineDot(active: exp.isCurrent),
+                    if (!isLast)
+                      Expanded(
+                        child: AnimatedBuilder(
+                          animation: _lineAnimation,
+                          builder: (context, _) => Opacity(
+                            opacity: _lineAnimation.value,
+                            child: Container(
+                              width: 2,
+                              margin: const EdgeInsets.symmetric(vertical: 10),
+                              decoration: BoxDecoration(
+                                gradient: AppColors.primaryGradientVertical,
+                                borderRadius: BorderRadius.circular(1),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 24),
+              // Right: experience card
+              Expanded(
+                child: Padding(
+                  padding: EdgeInsets.only(bottom: isLast ? 0 : 24),
+                  child: AnimatedSlide(
+                    offset: _visible ? Offset.zero : const Offset(0.08, 0),
+                    duration: Duration(milliseconds: 600 + i * 200),
+                    curve: Curves.easeOut,
+                    child: AnimatedOpacity(
+                      opacity: _visible ? 1.0 : 0.0,
+                      duration: Duration(milliseconds: 600 + i * 200),
+                      child: ExperienceTile(experience: exp),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      }).toList(),
+    );
+  }
+
+  // Desktop: alternating left/right with centre timeline
+  Widget _buildDesktopTimeline() {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Left tile — first experience, right-aligned
+        Expanded(
+          child: AnimatedSlide(
+            offset: _visible ? Offset.zero : const Offset(-0.1, 0),
+            duration: const Duration(milliseconds: 700),
+            curve: Curves.easeOut,
+            child: AnimatedOpacity(
+              opacity: _visible ? 1.0 : 0.0,
+              duration: const Duration(milliseconds: 700),
+              child: ExperienceTile(
+                experience: PortfolioData.experience[0],
+                alignRight: true,
+              ),
+            ),
+          ),
+        ),
+
+        // Centre timeline — fixed height, no Expanded/Spacer
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _buildTimelineDot(active: true),
+              AnimatedBuilder(
+                animation: _lineAnimation,
+                builder: (context, _) => SizedBox(
+                  width: 2,
+                  height: 220 * _lineAnimation.value,
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: AppColors.primaryGradientVertical,
+                      borderRadius: BorderRadius.circular(1),
+                    ),
+                  ),
+                ),
+              ),
+              _buildTimelineDot(active: false),
+            ],
+          ),
+        ),
+
+        // Right tile — second experience, staggered down
+        Expanded(
+          child: Padding(
+            padding: const EdgeInsets.only(top: 120),
+            child: AnimatedSlide(
+              offset: _visible ? Offset.zero : const Offset(0.1, 0),
+              duration: const Duration(milliseconds: 700),
+              curve: Curves.easeOut,
+              child: AnimatedOpacity(
+                opacity: _visible ? 1.0 : 0.0,
+                duration: const Duration(milliseconds: 700),
+                child: ExperienceTile(
+                  experience: PortfolioData.experience[1],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 

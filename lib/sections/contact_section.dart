@@ -9,6 +9,7 @@ import '../theme/app_text_styles.dart';
 import '../utils/constants.dart';
 import '../utils/scroll_controller_provider.dart';
 import '../widgets/section_header.dart';
+import '../widgets/section_backgrounds.dart';
 
 class ContactSection extends StatefulWidget {
   const ContactSection({super.key});
@@ -34,16 +35,19 @@ class _ContactSectionState extends State<ContactSection> {
           provider.setActiveSection('contact');
         }
       },
-      child: Container(
-        width: double.infinity,
-        padding: EdgeInsets.symmetric(
-          horizontal: isMobile ? 24 : (isTablet ? 48 : 80),
-          vertical: AppConstants.sectionPaddingV,
-        ),
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 1200),
-          child: Column(
-            children: [
+      child: Stack(
+        children: [
+          const Positioned.fill(child: CornerWebBackground()),
+          Container(
+            width: double.infinity,
+            padding: EdgeInsets.symmetric(
+              horizontal: isMobile ? 24 : (isTablet ? 48 : 80),
+              vertical: AppConstants.sectionPaddingV,
+            ),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 1200),
+              child: Column(
+                children: [
               const SectionHeader(
                 title: 'Get In Touch',
                 subtitle:
@@ -83,7 +87,7 @@ class _ContactSectionState extends State<ContactSection> {
                               _buildContactItem(
                                 Icons.mail_outline_rounded,
                                 AppConstants.email,
-                                'mailto:${AppConstants.email}',
+                                AppConstants.gmailCompose,
                               ),
                               const SizedBox(height: 12),
                               _buildContactItem(
@@ -111,8 +115,7 @@ class _ContactSectionState extends State<ContactSection> {
                                   _SocialButton(
                                     label: 'Email Me',
                                     icon: Icons.mail_rounded,
-                                    url:
-                                        'mailto:${AppConstants.email}',
+                                    url: AppConstants.gmailCompose,
                                     outlined: true,
                                   ),
                                 ],
@@ -125,9 +128,11 @@ class _ContactSectionState extends State<ContactSection> {
                   ),
                 ),
               ),
-            ],
+                ],
+              ),
+            ),
           ),
-        ),
+        ],
       ),
     );
   }
@@ -236,6 +241,7 @@ class _ContactItemState extends State<_ContactItem> {
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
             children: [
               Icon(
                 widget.icon,
@@ -243,10 +249,13 @@ class _ContactItemState extends State<_ContactItem> {
                 color: _hovered ? AppColors.accent : AppColors.textSecondary,
               ),
               const SizedBox(width: 12),
-              Text(
-                widget.text,
-                style: AppTextStyles.bodyMd.copyWith(
-                  color: _hovered ? AppColors.accent : AppColors.textPrimary,
+              Flexible(
+                child: Text(
+                  widget.text,
+                  style: AppTextStyles.bodyMd.copyWith(
+                    color: _hovered ? AppColors.accent : AppColors.textPrimary,
+                  ),
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
             ],

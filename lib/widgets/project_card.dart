@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../models/project_model.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_text_styles.dart';
@@ -54,6 +55,7 @@ class _ProjectCardState extends State<ProjectCard> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // Title + open icon
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -63,17 +65,29 @@ class _ProjectCardState extends State<ProjectCard> {
                       style: AppTextStyles.cardTitle,
                     ),
                   ),
-                  const SizedBox(width: 8),
-                  Icon(
-                    Icons.open_in_new_rounded,
-                    size: 16,
-                    color: _hovered
-                        ? AppColors.accent
-                        : AppColors.textSecondary.withOpacity(0.5),
-                  ),
+                  if (widget.project.url != null) ...[
+                    const SizedBox(width: 8),
+                    MouseRegion(
+                      cursor: SystemMouseCursors.click,
+                      child: GestureDetector(
+                        onTap: () => launchUrl(
+                          Uri.parse(widget.project.url!),
+                          mode: LaunchMode.externalApplication,
+                        ),
+                        child: Icon(
+                          Icons.open_in_new_rounded,
+                          size: 16,
+                          color: _hovered
+                              ? AppColors.accent
+                              : AppColors.textSecondary.withOpacity(0.5),
+                        ),
+                      ),
+                    ),
+                  ],
                 ],
               ),
               const SizedBox(height: 10),
+              // Platform badges
               Wrap(
                 spacing: 6,
                 runSpacing: 6,
@@ -93,6 +107,7 @@ class _ProjectCardState extends State<ProjectCard> {
                 }).toList(),
               ),
               const SizedBox(height: 14),
+              // Description – full width
               Text(
                 widget.project.description,
                 style: AppTextStyles.bodySm,
@@ -100,7 +115,8 @@ class _ProjectCardState extends State<ProjectCard> {
                 overflow: TextOverflow.ellipsis,
               ),
               const SizedBox(height: 14),
-              ...widget.project.achievements.take(3).map((a) => Padding(
+              // Achievements
+              ...widget.project.achievements.map((a) => Padding(
                     padding: const EdgeInsets.only(bottom: 6),
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -121,6 +137,32 @@ class _ProjectCardState extends State<ProjectCard> {
                     ),
                   )),
               const SizedBox(height: 16),
+              // Metadata row: team size + platform count
+              Row(
+                children: [
+                  _metaItem(
+                    Icons.people_outline_rounded,
+                    '${widget.project.teamSize} dev${widget.project.teamSize > 1 ? "s" : ""}',
+                  ),
+                  const SizedBox(width: 20),
+                  _metaItem(
+                    Icons.devices_rounded,
+                    '${widget.project.platforms.length} platform${widget.project.platforms.length > 1 ? "s" : ""}',
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              // Tech stack – full width
+              const Divider(color: AppColors.border, height: 1),
+              const SizedBox(height: 12),
+              Text(
+                'TECH STACK',
+                style: AppTextStyles.badgeLabel.copyWith(
+                  color: AppColors.textSecondary,
+                  letterSpacing: 1.2,
+                ),
+              ),
+              const SizedBox(height: 8),
               Wrap(
                 spacing: 8,
                 runSpacing: 8,
@@ -142,6 +184,17 @@ class _ProjectCardState extends State<ProjectCard> {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _metaItem(IconData icon, String label) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, size: 14, color: AppColors.textSecondary),
+        const SizedBox(width: 5),
+        Text(label, style: AppTextStyles.bodySm),
+      ],
     );
   }
 }

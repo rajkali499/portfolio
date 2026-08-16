@@ -37,8 +37,9 @@ class _TiltCardState extends State<TiltCard> {
       },
       onHover: (event) {
         final box = context.findRenderObject() as RenderBox?;
-        if (box == null) return;
+        if (box == null || !box.hasSize) return;
         final size = box.size;
+        if (size.isEmpty) return;
         final pos = event.localPosition;
         setState(() {
           _rotateY = ((pos.dx / size.width) - 0.5) * widget.maxTilt * 2;
