@@ -91,7 +91,7 @@ class _SkillsSectionState extends State<SkillsSection> {
         const SizedBox(width: 60),
         Expanded(
           flex: 5,
-          child: _buildCategoryGrid(isTablet ? 1 : 2),
+          child: _buildCategoryGrid(isTablet ? 1 : 2, isMobile: false),
         ),
       ],
     );
@@ -115,12 +115,12 @@ class _SkillsSectionState extends State<SkillsSection> {
           ],
         ),
         const SizedBox(height: 40),
-        _buildCategoryGrid(crossAxisCount),
+        _buildCategoryGrid(crossAxisCount, isMobile: true),
       ],
     );
   }
 
-  Widget _buildCategoryGrid(int crossAxisCount) {
+  Widget _buildCategoryGrid(int crossAxisCount, {bool isMobile = false}) {
     return GridView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
@@ -136,6 +136,7 @@ class _SkillsSectionState extends State<SkillsSection> {
           category: PortfolioData.skillCategories[index],
           index: index,
           triggered: _triggered,
+          isMobile: isMobile,
         );
       },
     );
@@ -146,11 +147,13 @@ class _SkillCategoryCard extends StatefulWidget {
   final dynamic category;
   final int index;
   final bool triggered;
+  final bool isMobile;
 
   const _SkillCategoryCard({
     required this.category,
     required this.index,
     required this.triggered,
+    this.isMobile = false,
   });
 
   @override
@@ -291,33 +294,39 @@ class _SkillCategoryCardState extends State<_SkillCategoryCard>
 
   @override
   Widget build(BuildContext context) {
-    Widget card = MouseRegion(
-      onEnter: (_) => _onHover(true),
-      onExit: (_) => _onHover(false),
-      child: AnimatedBuilder(
-        animation: _flipAnimation,
-        builder: (context, _) {
-          final angle = _flipAnimation.value * math.pi;
-          final showFront = angle > math.pi / 2;
+    Widget card;
 
-          Widget face = showFront
-              ? Transform(
-                  alignment: Alignment.center,
-                  transform: Matrix4.rotationY(math.pi),
-                  child: _buildFrontFace(),
-                )
-              : _buildBackFace();
+    if (widget.isMobile) {
+      card = _buildFrontFace();
+    } else {
+      card = MouseRegion(
+        onEnter: (_) => _onHover(true),
+        onExit: (_) => _onHover(false),
+        child: AnimatedBuilder(
+          animation: _flipAnimation,
+          builder: (context, _) {
+            final angle = _flipAnimation.value * math.pi;
+            final showFront = angle > math.pi / 2;
 
-          return Transform(
-            alignment: Alignment.center,
-            transform: Matrix4.identity()
-              ..setEntry(3, 2, 0.001)
-              ..rotateY(angle),
-            child: face,
-          );
-        },
-      ),
-    );
+            Widget face = showFront
+                ? Transform(
+                    alignment: Alignment.center,
+                    transform: Matrix4.rotationY(math.pi),
+                    child: _buildFrontFace(),
+                  )
+                : _buildBackFace();
+
+            return Transform(
+              alignment: Alignment.center,
+              transform: Matrix4.identity()
+                ..setEntry(3, 2, 0.001)
+                ..rotateY(angle),
+              child: face,
+            );
+          },
+        ),
+      );
+    }
 
     if (widget.triggered) {
       return card
