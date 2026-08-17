@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <base href="/portfolio/">
+  <meta charset="UTF-8">
+  <meta content="IE=Edge" http-equiv="X-UA-Compatible">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Kalirajan K — Flutter Developer with 4 years building production FinTech apps. Expert in BLoC, Riverpod, NPCI/UPI/BBPS payment workflows.">
+  <meta name="keywords" content="Flutter developer, FinTech, BLoC, Riverpod, UPI, BBPS, NPCI, Firebase, mobile developer India, Chennai">
+  <meta name="author" content="Kalirajan K">
+
+  <!-- Open Graph -->
+  <meta property="og:title" content="Kalirajan K | Flutter Developer">
+  <meta property="og:description" content="4 years Flutter experience in FinTech. Built production payment apps with BLoC, NPCI, UPI, and BBPS.">
+  <meta property="og:type" content="website">
+
+  <!-- iOS -->
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Kalirajan K">
+  <link rel="apple-touch-icon" href="icons/Icon-192.png">
+
+  <!-- Theme -->
+  <meta name="theme-color" content="#0C0808">
+
+  <link rel="icon" type="image/svg+xml" href="favicon.svg"/>
+  <link rel="icon" type="image/png" href="favicon.png"/>
+  <title>Kalirajan K | Flutter Developer</title>
+  <link rel="manifest" href="manifest.json">
+
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    html, body {
+      width: 100%; height: 100%;
+      overflow: hidden;
+      background: #0C0808;
+      font-family: system-ui, -apple-system, sans-serif;
+    }
+
+    /* ── Loading stage: covers the whole viewport ─────────────────── */
+    #spider-stage {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      background: #0C0808;
+      transition: opacity 0.6s ease;
+    }
+
+    #spider-canvas {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    /* ── KK logo + subtitle — centred, fade in after web is built ─── */
+    #loading-ui {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      pointer-events: none;
+    }
+
+    .kk-logo {
+      font-size: 52px;
+      font-weight: 800;
+      letter-spacing: -2px;
+      background: linear-gradient(135deg, #C41230 0%, #E5231C 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      opacity: 0;
+      transform: translateY(12px);
+      animation: kk-in 0.8s cubic-bezier(.22,.68,0,1.2) 2.6s forwards;
+    }
+
+    .kk-sub {
+      font-size: 11px;
+      font-weight: 400;
+      color: #917878;
+      letter-spacing: 4px;
+      text-transform: uppercase;
+      margin-top: 10px;
+      opacity: 0;
+      transform: translateY(8px);
+      animation: kk-in 0.7s ease-out 3.0s forwards;
+    }
+
+    @keyframes kk-in {
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ── Spider-web loading stage ─────────────────────────────────── -->
+  <div id="spider-stage">
+    <canvas id="spider-canvas"></canvas>
+    <div id="loading-ui">
+      <div class="kk-logo">KK</div>
+      <div class="kk-sub">Flutter Developer</div>
+    </div>
+  </div>
+
+  <script>
+  /* ================================================================
+     Spider-web intro animation
+     Mobile < 480 px  →  10 spiders
+     Tablet 480-1023  →  15 spiders
+     Desktop ≥ 1024   →  20 spiders
+     Each spider starts from a point on the screen perimeter and
+     crawls toward the centre leaving a silk thread, while a
+     concentric-polygon web builds beneath them.
+  ================================================================ */
+  (function () {
+    'use strict';
+
+    const stage  = document.getElementById('spider-stage');
+    const canvas = document.getElementById('spider-canvas');
+    const ctx    = canvas.getContext('2d');
+
+    /* ── State ──────────────────────────────────────────────────── */
+    let W, H, cx, cy, maxR;
+    let spiders   = [];
+    let webProg   = 0;
+    let shimmer   = 0;
+    let startTs   = null;
+    let rafId     = null;
+    let dismissed = false;
+    let _fading      = false;
+    let _webDone     = false;
+    let _animDone    = false;
+    let _flutterDone = false;
+
+    /* ── Palette ────────────────────────────────────────────────── */
+    const RED      = '#E5231C';
+    const DARK_RED = '#8B0000';
+    const BLUE     = '#1B3A6B';
+    const INK      = '#080808';
+    const WR       = '200,212,224'; // web silver RGB
+
+    function wc(a) {
+      return 'rgba(' + WR + ',' + Math.max(0, Math.min(1, a)) + ')';
+    }
+
+    /* ── Resize ─────────────────────────────────────────────────── */
+    function resize() {
+      canvas.width  = W  = window.innerWidth;
+      canvas.height = H  = window.innerHeight;
+      cx = W / 2;
+      cy = H / 2;
+      maxR = Math.min(W, H) * 0.42;
+    }
+
+    function getCount() {
+      return W < 480 ? 10 : W < 1024 ? 15 : 20;
+    }
+
+    /* ── Find where an angle ray from the centre hits the edge ──── */
+    function edgePoint(angle) {
+      const dx = Math.cos(angle);
+      const dy = Math.sin(angle);
+      let t = 1e9;
+      if (dx >  1e-6) t = Math.min(t, (W - cx) / dx);
+      if (dx < -1e-6) t = Math.min(t, -cx       / dx);
+      if (dy >  1e-6) t = Math.min(t, (H - cy)  / dy);
+      if (dy < -1e-6) t = Math.min(t, -cy        / dy);
+      return [cx + dx * t, cy + dy * t];
+    }
+
+    /* ── Spider class ───────────────────────────────────────────── */
+    class Spider {
+      constructor(idx, total) {
+        /* Distribute evenly around the perimeter by radiating angle */
+        this.angle = (2 * Math.PI / total) * idx - Math.PI / 2;
+
+        const [ex, ey] = edgePoint(this.angle);
+        this.x  = ex;  this.y  = ey;
+        this.sx = ex;  this.sy = ey;   // silk origin stays fixed
+
+        /* Each spider aims for a slightly different orbit radius so
+           they don't all pile up at the same circle */
+        this.orbitR = maxR * (0.20 + (idx % 4) * 0.11 + (idx % 3) * 0.04);
+        const ta    = this.angle + Math.PI; // direction toward centre
+        this.tx     = cx + Math.cos(ta) * this.orbitR;
+        this.ty     = cy + Math.sin(ta) * this.orbitR;
+
+        this.orbitA     = ta;
+        this.orbitSpd   = (0.0038 + (idx % 5) * 0.0007)
+                          * (idx % 2 === 0 ? 1 : -1);
+        this.speed      = 1.3 + (idx % 4) * 0.22;
+        this.scale      = 0.55 + (idx % 3) * 0.13;
+        this.phase      = 'wait';
+        /* Stagger: first spider starts at 0.08 s, last at 1.3 s */
+        this.startAt    = 0.08 + (idx / total) * 1.22;
+        this.faceAngle  = Math.atan2(cy - ey, cx - ex);
+      }
+
+      update(t) {
+        if (dismissed || t < this.startAt) return;
+        if (this.phase === 'wait') this.phase = 'approach';
+
+        if (this.phase === 'approach') {
+          const dx = this.tx - this.x;
+          const dy = this.ty - this.y;
+          const d  = Math.sqrt(dx * dx + dy * dy);
+          if (d < this.speed + 1) {
+            this.x = this.tx; this.y = this.ty;
+            this.orbitA = Math.atan2(this.y - cy, this.x - cx);
+            this.phase  = 'orbit';
+          } else {
+            this.faceAngle = Math.atan2(dy, dx);
+            this.x += (dx / d) * this.speed;
+            this.y += (dy / d) * this.speed;
+          }
+        } else {
+          /* Orbit — compute new position and derive face direction */
+          const prevX = this.x, prevY = this.y;
+          this.orbitA += this.orbitSpd;
+          this.x = cx + Math.cos(this.orbitA) * this.orbitR;
+          this.y = cy + Math.sin(this.orbitA) * this.orbitR;
+          const mvx = this.x - prevX, mvy = this.y - prevY;
+          if (Math.abs(mvx) + Math.abs(mvy) > 1e-4) {
+            this.faceAngle = Math.atan2(mvy, mvx);
+          }
+        }
+      }
+
+      draw() {
+        if (this.phase === 'wait') return;
+        /* Silk thread from perimeter to current position */
+        ctx.beginPath();
+        ctx.moveTo(this.sx, this.sy);
+        ctx.lineTo(this.x, this.y);
+        ctx.strokeStyle = wc(0.12);
+        ctx.lineWidth   = 0.55;
+        ctx.stroke();
+        /* Faint glow on thread */
+        ctx.beginPath();
+        ctx.moveTo(this.sx, this.sy);
+        ctx.lineTo(this.x, this.y);
+        ctx.strokeStyle = wc(0.04);
+        ctx.lineWidth   = 2.5;
+        ctx.stroke();
+
+        paintSpider(this.x, this.y, this.faceAngle, this.scale);
+      }
+    }
+
+    /* ── Spider sprite ──────────────────────────────────────────── */
+    function paintSpider(x, y, face, s) {
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.lineCap = 'round';
+
+      const perp      = face + Math.PI / 2;
+      const legAng    = [0.18, 0.42, 0.65, 0.87];
+      const legLen    = [12,   14,   12,   10  ];
+
+      /* ── Legs ── */
+      ctx.strokeStyle = '#1A0A0A';
+      ctx.lineWidth   = 1.1 * s;
+      for (let i = 0; i < 4; i++) {
+        for (const side of [-1, 1]) {
+          const ba = perp + side * (Math.PI * 0.5 * legAng[i] + 0.12);
+          const mx = Math.cos(ba) * legLen[i] * 0.46 * s;
+          const my = Math.sin(ba) * legLen[i] * 0.46 * s;
+          const ta = ba + side * 0.62;
+          ctx.beginPath();
+          ctx.moveTo(0, 0);
+          ctx.lineTo(mx, my);
+          ctx.lineTo(mx + Math.cos(ta) * legLen[i] * 0.54 * s,
+                     my + Math.sin(ta) * legLen[i] * 0.54 * s);
+          ctx.stroke();
+        }
+      }
+
+      /* ── Abdomen (red) ── */
+      ctx.shadowColor = RED;
+      ctx.shadowBlur  = 5 * s;
+      ctx.beginPath(); ctx.arc(0, 0, 4.6 * s, 0, 6.283);
+      ctx.fillStyle = INK; ctx.fill();
+      ctx.beginPath(); ctx.arc(0, 0, 4.0 * s, 0, 6.283);
+      ctx.fillStyle = RED; ctx.fill();
+      ctx.shadowBlur = 0;
+
+      /* Mini web lines on abdomen */
+      ctx.strokeStyle = 'rgba(0,0,0,0.22)';
+      ctx.lineWidth   = 0.45 * s;
+      for (let i = 0; i < 5; i++) {
+        const a = (6.283 / 5) * i;
+        ctx.beginPath();
+        ctx.moveTo(Math.cos(a) * s,       Math.sin(a) * s);
+        ctx.lineTo(Math.cos(a) * 3.6 * s, Math.sin(a) * 3.6 * s);
+        ctx.stroke();
+      }
+
+      /* ── Pedicel (waist) ── */
+      const px = Math.cos(face) * 6.0 * s;
+      const py = Math.sin(face) * 6.0 * s;
+      ctx.beginPath(); ctx.arc(px, py, 1.8 * s, 0, 6.283);
+      ctx.fillStyle = INK; ctx.fill();
+      ctx.beginPath(); ctx.arc(px, py, 1.4 * s, 0, 6.283);
+      ctx.fillStyle = DARK_RED; ctx.fill();
+
+      /* ── Cephalothorax (blue) ── */
+      const thx = Math.cos(face) * 10.5 * s;
+      const thy = Math.sin(face) * 10.5 * s;
+      ctx.beginPath(); ctx.arc(thx, thy, 3.8 * s, 0, 6.283);
+      ctx.fillStyle = INK; ctx.fill();
+      ctx.beginPath(); ctx.arc(thx, thy, 3.2 * s, 0, 6.283);
+      ctx.fillStyle = BLUE; ctx.fill();
+      ctx.beginPath(); ctx.arc(thx, thy, 3.2 * s, 0, 6.283);
+      ctx.fillStyle = 'rgba(42,82,152,0.45)'; ctx.fill();
+
+      /* Mini web on thorax */
+      ctx.strokeStyle = 'rgba(0,0,0,0.2)';
+      ctx.lineWidth   = 0.4 * s;
+      for (let i = 0; i < 4; i++) {
+        const a = (6.283 / 4) * i;
+        ctx.beginPath();
+        ctx.moveTo(thx + Math.cos(a) * 0.8 * s, thy + Math.sin(a) * 0.8 * s);
+        ctx.lineTo(thx + Math.cos(a) * 2.8 * s, thy + Math.sin(a) * 2.8 * s);
+        ctx.stroke();
+      }
+
+      /* ── Eyes ── */
+      const eyePerp = face + Math.PI / 2;
+      const efx     = Math.cos(face) * 1.8 * s;
+      const efy     = Math.sin(face) * 1.8 * s;
+      for (const side of [-1, 1]) {
+        const ex = thx + efx + Math.cos(eyePerp) * side * 1.5 * s;
+        const ey = thy + efy + Math.sin(eyePerp) * side * 1.5 * s;
+        ctx.beginPath(); ctx.arc(ex, ey, 1.1 * s, 0, 6.283);
+        ctx.fillStyle = INK; ctx.fill();
+        ctx.beginPath(); ctx.arc(ex, ey, 0.85 * s, 0, 6.283);
+        ctx.fillStyle = '#fff'; ctx.fill();
+        ctx.beginPath();
+        ctx.arc(ex + 0.28 * s, ey - 0.28 * s, 0.33 * s, 0, 6.283);
+        ctx.fillStyle = '#000'; ctx.fill();
+      }
+
+      ctx.restore();
+    }
+
+    /* ── Web structure ─────────────────────────────────────────── */
+    const N_SPOKES = 16;
+    const N_RINGS  =  9;
+
+    function drawWeb(p, sh) {
+      if (p <= 0) return;
+
+      /* Bottom-left anchor line — first thing to appear */
+      if (p > 0.04) {
+        const ap = Math.min(1, (p - 0.04) / 0.30);
+        ctx.lineCap = 'round';
+        /* Glow */
+        ctx.beginPath();
+        ctx.moveTo(0, H);
+        ctx.lineTo(cx * ap, H + (cy - H) * ap);
+        ctx.strokeStyle = wc(0.07 * ap);
+        ctx.lineWidth   = 4;
+        ctx.stroke();
+        /* Main thread */
+        ctx.beginPath();
+        ctx.moveTo(0, H);
+        ctx.lineTo(cx * ap, H + (cy - H) * ap);
+        ctx.strokeStyle = wc(0.22 * ap);
+        ctx.lineWidth   = 1.1;
+        ctx.stroke();
+      }
+
+      /* ── Spokes — draw sequentially starting from the BL direction */
+      /* Direction from centre toward the BL corner */
+      const blA = Math.atan2(H - cy, 0 - cx);
+
+      for (let i = 0; i < N_SPOKES; i++) {
+        const a = (2 * Math.PI / N_SPOKES) * i - Math.PI / 2;
+        /* Angular distance from blA, normalised to [0, 1] */
+        let diff = (a - blA) % (2 * Math.PI);
+        if (diff < 0) diff += 2 * Math.PI;
+        const frac      = diff / (2 * Math.PI);   // 0 = first, 1 = last
+        const threshold = frac * 0.48;
+        if (p < threshold) continue;
+
+        const sp     = Math.min(1, (p - threshold) / 0.14);
+        const r      = maxR * sp;
+        const ex     = cx + Math.cos(a) * r;
+        const ey     = cy + Math.sin(a) * r;
+        const isMain = i % 2 === 0;
+
+        if (isMain) {
+          /* Glow pass */
+          ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(ex, ey);
+          ctx.strokeStyle = wc(0.07 * p);
+          ctx.lineWidth   = 3.5;
+          ctx.stroke();
+        }
+
+        ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(ex, ey);
+        ctx.strokeStyle = wc((0.17 + 0.04 * sh) * p);
+        ctx.lineWidth   = isMain ? 0.90 : 0.55;
+        ctx.stroke();
+      }
+
+      /* ── Rings */
+      if (p > 0.30) {
+        const rp = (p - 0.30) / 0.70;
+        for (let r = 0; r < N_RINGS; r++) {
+          if (rp < r / N_RINGS) continue;
+
+          const radius  = maxR * (0.10 + 0.90 * ((r + 1) / N_RINGS));
+          const isOuter = r >= N_RINGS - 2;
+          const op      = (isOuter ? 0.21 : 0.12) * rp;
+
+          if (isOuter) {
+            ctx.beginPath();
+            for (let i = 0; i <= N_SPOKES; i++) {
+              const a  = (2 * Math.PI / N_SPOKES) * i - Math.PI / 2;
+              const px = cx + Math.cos(a) * radius;
+              const py = cy + Math.sin(a) * radius;
+              i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+            }
+            ctx.closePath();
+            ctx.strokeStyle = wc(op * 0.5);
+            ctx.lineWidth   = 4;
+            ctx.stroke();
+          }
+
+          ctx.beginPath();
+          for (let i = 0; i <= N_SPOKES; i++) {
+            const a  = (2 * Math.PI / N_SPOKES) * i - Math.PI / 2;
+            const px = cx + Math.cos(a) * radius;
+            const py = cy + Math.sin(a) * radius;
+            i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+          }
+          ctx.closePath();
+          ctx.strokeStyle = wc(op + 0.025 * sh);
+          ctx.lineWidth   = isOuter ? 1.0 : 0.65;
+          ctx.stroke();
+        }
+      }
+
+      /* ── Radial connector threads between rings (orb-weaver detail) */
+      if (p > 0.70) {
+        const cp = (p - 0.70) / 0.30;
+        ctx.strokeStyle = wc(0.06 * cp);
+        ctx.lineWidth   = 0.45;
+        const radii = [];
+        for (let r = 0; r < N_RINGS; r++) {
+          radii.push(maxR * (0.10 + 0.90 * ((r + 1) / N_RINGS)));
+        }
+        for (let r = 0; r < N_RINGS - 1; r++) {
+          for (let i = 0; i < N_SPOKES; i++) {
+            const a1   = (2 * Math.PI / N_SPOKES) * i       - Math.PI / 2;
+            const a2   = (2 * Math.PI / N_SPOKES) * (i + 1) - Math.PI / 2;
+            const aMid = (a1 + a2) / 2;
+            ctx.beginPath();
+            ctx.moveTo(cx + Math.cos(aMid) * radii[r],
+                       cy + Math.sin(aMid) * radii[r]);
+            ctx.lineTo(cx + Math.cos(aMid) * radii[r + 1],
+                       cy + Math.sin(aMid) * radii[r + 1]);
+            ctx.stroke();
+          }
+        }
+      }
+
+      /* ── Corner webs at all four corners */
+      if (p > 0.28) {
+        const cp = (p - 0.28) / 0.72;
+        const s  = Math.min(W, H);
+        /* BL — most prominent (where spiders originate) */
+        drawCornerWeb(0,  H,  -Math.PI / 2,      0,              cp * 0.15, s * 0.28);
+        /* TR */
+        drawCornerWeb(W,  0,   Math.PI / 2,      Math.PI,        cp * 0.10, s * 0.19);
+        /* BR */
+        drawCornerWeb(W,  H,   Math.PI,     3 * Math.PI / 2,     cp * 0.07, s * 0.14);
+        /* TL */
+        drawCornerWeb(0,  0,   0,               Math.PI / 2,     cp * 0.07, s * 0.14);
+      }
+    }
+
+    /* Corner web fan: ox,oy = corner origin; angles define the fan */
+    function drawCornerWeb(ox, oy, startA, endA, opacity, size) {
+      const n     = 6;
+      const sweep = Math.abs(endA - startA);
+      ctx.strokeStyle = wc(opacity);
+      ctx.lineWidth   = 0.65;
+
+      for (let i = 0; i < n; i++) {
+        const a = startA + (sweep / (n - 1)) * i;
+        ctx.beginPath();
+        ctx.moveTo(ox, oy);
+        ctx.lineTo(ox + Math.cos(a) * size, oy + Math.sin(a) * size);
+        ctx.stroke();
+      }
+      for (let r = 1; r <= 4; r++) {
+        ctx.beginPath();
+        for (let i = 0; i <= n; i++) {
+          const a  = startA + (sweep / (n - 1)) * Math.min(i, n - 1);
+          const px = ox + Math.cos(a) * size * r / 4;
+          const py = oy + Math.sin(a) * size * r / 4;
+          i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+        }
+        ctx.stroke();
+      }
+    }
+
+    /* ── Dismiss: fade out stage, let Flutter through ─────────────── */
+    function dismiss() {
+      if (_fading) return;
+      _fading = true;
+      /*
+       * Keep the rAF loop alive during the fade — spiders and shimmer
+       * keep animating while the stage opacity transitions to 0.
+       * The loop exits on its own once stage.remove() is called.
+       */
+      stage.style.transition = 'opacity 0.85s ease';
+      stage.style.opacity    = '0';
+      setTimeout(function () {
+        dismissed = true;
+        cancelAnimationFrame(rafId);
+        stage.remove();
+      }, 920);
+    }
+
+    /*
+     * Dual-gate: dismiss only when BOTH are ready.
+     *   _animDone    — rAF loop saw webProg >= 1 (real visual completion)
+     *   _flutterDone — Flutter has painted its first frame into the DOM
+     */
+    function tryDismiss() {
+      if (_animDone && _flutterDone) dismiss();
+    }
+
+    /* Primary signal: flutter-first-frame fires when Dart has painted frame 1 */
+    function onFlutterReady() {
+      if (_flutterDone) return;
+      _flutterDone = true;
+      tryDismiss();
+    }
+    window.addEventListener('flutter-first-frame', onFlutterReady, { once: true });
+
+    /*
+     * Fallback: MutationObserver watching for Flutter's canvas / glass-pane.
+     * subtree:true catches elements nested inside any container Flutter may add.
+     */
+    var flutterObserver = new MutationObserver(function (muts, obs) {
+      for (var m = 0; m < muts.length; m++) {
+        for (var k = 0; k < muts[m].addedNodes.length; k++) {
+          var node = muts[m].addedNodes[k];
+          if (node.nodeType !== 1) continue;
+          var tag = node.tagName.toLowerCase();
+          if (tag === 'canvas' || tag === 'flutter-view' || tag.startsWith('flt-')) {
+            obs.disconnect();
+            /* 200 ms grace so Flutter paints at least one frame behind the overlay */
+            setTimeout(onFlutterReady, 200);
+            return;
+          }
+        }
+      }
+    });
+    flutterObserver.observe(document.body, { childList: true, subtree: true });
+
+    /* Safety net — force dismiss after 8 s no matter what */
+    setTimeout(function () {
+      flutterObserver.disconnect();
+      _animDone = true;
+      _flutterDone = true;
+      tryDismiss();
+    }, 8000);
+
+    /* ── Main animation loop ────────────────────────────────────── */
+    function loop(ts) {
+      if (!stage.parentNode) return;   // exits cleanly once stage is removed
+      if (!startTs) startTs = ts;
+      var t = (ts - startTs) / 1000;
+
+      /* Web fully drawn in 4 s */
+      webProg = Math.min(1, t / 4.0);
+      shimmer = 0.5 + 0.5 * Math.sin(t * 2.8);
+
+      /* Arm the animation-done gate the moment the web finishes drawing */
+      if (!_webDone && webProg >= 1) {
+        _webDone = true;
+        setTimeout(function () { _animDone = true; tryDismiss(); }, 500);
+      }
+
+      ctx.clearRect(0, 0, W, H);
+
+      drawWeb(webProg, shimmer);
+
+      for (var i = 0; i < spiders.length; i++) {
+        spiders[i].update(t);
+        spiders[i].draw();
+      }
+
+      rafId = requestAnimationFrame(loop);
+    }
+
+    /* ── Init / reinit ──────────────────────────────────────────── */
+    function init() {
+      resize();
+      var n = getCount();
+      spiders = [];
+      for (var i = 0; i < n; i++) spiders.push(new Spider(i, n));
+      startTs = null;
+      _webDone = false;
+      if (!_fading) rafId = requestAnimationFrame(loop);
+    }
+
+    window.addEventListener('resize', function () {
+      if (_fading) return;
+      cancelAnimationFrame(rafId);
+      init();
+    });
+
+    init();
+  })();
+  </script>
+
+  <script src="flutter_bootstrap.js" async></script>
+</body>
+</html>
